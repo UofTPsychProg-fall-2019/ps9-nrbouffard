@@ -31,18 +31,19 @@ ipip <- read_csv('ipip50_sample.csv')
 # to long format with a gather command on the trait items (A_1...O_10):
 # **HINT: The long format data set should have 42000 rows**
 ipip.l <- ipip %>% 
-  ...
+  gather("index", "score", 7:48) 
 
 # We need a column that identifies rows as belonging to a specific trait,
 # but the column you created based on the trait items includes both trait
 # and item (e.g., A_1, but we want A in a separate column from item 1).
 # Make this happen with a separate command:
 ipip.l <- ipip.l %>% 
-  ...
+  separate(index, c("big5trait", "val"), sep = '_')
 
 # Calculate averages for each participant (coded as RID) and trait:
 ipip.comp <- ipip.l %>% 
-  ...
+  group_by(RID, big5trait) %>% 
+  summarize(mean_trait_score = mean(score))
 
 
 # Cleaning up the other variables -----------------------------------------
@@ -54,13 +55,16 @@ ipip.comp <- ipip.l %>%
 # HINT: use a select call on ipip to only select the columns that you want to
 # merge with ipip.comp
 ipip.comp <- ipip %>% 
-  ...
+  select(1:6) %>% 
+  left_join(ipip.comp, by = "RID")
+
 
 # One last thing, our exercise variable is all out of order. Because it was read
 # in as a character string, it is in alphabetical order. Let's turn it into a 
 # factor and reorder the levels according to increasing frequency. Do this by 
 # using the factor command and its levels argument:
-ipip.comp$exer <- ...
+ipip.comp$exer <- factor(ipip.comp$exer, levels = c("veryRarelyNever", "less1wk","1or2wk","3or5wk","less1mo","more5wk"))
+levels(ipip.comp$exer)
 
 
 
@@ -71,13 +75,15 @@ ipip.comp$exer <- ...
 # of the mean (i.e., standard deviation divided by the square root of the 
 # number of participants; use variable name 'sem'):
 exer.avg <- ipip.comp %>% 
-  ...
+  group_by(big5trait, exer) %>% 
+  summarize(avg = mean(mean_trait_score), n=length(unique(ipip.comp$RID)), sem= sd(mean_trait_score)/sqrt(n))
 
+  
 # If you properly created the exer.avg tibble above, the following code will 
 # create a plot and save it as figures/exer.pdf. Check your figure with 
 # figures/exer_answer.pdf to see if your data wrangling is correct!
 dodge <- position_dodge(0.5)
-ggplot(exer.avg,aes(x=trait,y=avg,colour=exer))+
+ggplot(exer.avg,aes(x=big5trait,y=avg,colour=exer))+
   geom_pointrange(aes(ymin=avg-sem,ymax=avg+sem),
                position=dodge)+
   labs(x='big 5 trait',y='mean trait value',title='Big 5 and exercise')
