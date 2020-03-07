@@ -31,7 +31,7 @@ ipip <- read_csv('ipip50_sample.csv')
 # to long format with a gather command on the trait items (A_1...O_10):
 # **HINT: The long format data set should have 42000 rows**
 ipip.l <- ipip %>% 
-  gather("index", "score", 7:48) 
+  gather("index", "score", A_1:O_10) 
 
 # We need a column that identifies rows as belonging to a specific trait,
 # but the column you created based on the trait items includes both trait
@@ -56,14 +56,14 @@ ipip.comp <- ipip.l %>%
 # merge with ipip.comp
 ipip.comp <- ipip %>% 
   select(1:6) %>% 
-  left_join(ipip.comp, by = "RID")
+  right_join(ipip.comp, by = "RID")
 
 
 # One last thing, our exercise variable is all out of order. Because it was read
 # in as a character string, it is in alphabetical order. Let's turn it into a 
 # factor and reorder the levels according to increasing frequency. Do this by 
 # using the factor command and its levels argument:
-ipip.comp$exer <- factor(ipip.comp$exer, levels = c("veryRarelyNever", "less1wk","1or2wk","3or5wk","less1mo","more5wk"))
+ipip.comp$exer <- factor(ipip.comp$exer, levels = c('veryRarelyNever','less1mo','less1wk','1or2wk','3or5wk','more5wk'))
 levels(ipip.comp$exer)
 
 
@@ -76,7 +76,7 @@ levels(ipip.comp$exer)
 # number of participants; use variable name 'sem'):
 exer.avg <- ipip.comp %>% 
   group_by(big5trait, exer) %>% 
-  summarize(avg = mean(mean_trait_score), n=length(unique(ipip.comp$RID)), sem= sd(mean_trait_score)/sqrt(n))
+  summarize(avg = mean(mean_trait_score), n=length(unique(ipip.comp$RID)), sem = (sd(mean_trait_score)/sqrt(n)))
 
   
 # If you properly created the exer.avg tibble above, the following code will 
@@ -92,10 +92,11 @@ ggsave('figures/exer.pdf',units='in',width=7,height=5)
 
 # repeat the above summary commands for gender:
 gender.avg <- ipip.comp %>% 
-  ...
+  group_by(big5trait, gender) %>% 
+  summarize(avg = mean(mean_trait_score), n=length(unique(ipip.comp$RID)), sem = (sd(mean_trait_score)/sqrt(n)))
 
 # create a gender plot and compare to the answer figure:
-ggplot(gender.avg,aes(x=trait,y=avg,colour=gender))+
+ggplot(gender.avg,aes(x=big5trait,y=avg,colour=gender))+
   geom_pointrange(aes(ymin=avg-sem,ymax=avg+sem),
                   position=dodge)+
   labs(x='big 5 trait',y='mean trait value',title='Big 5 and gender')
@@ -109,16 +110,24 @@ ggsave('figures/gender.pdf',units='in',width=5,height=5)
 # HINT: check out the case_when function:
 #     https://dplyr.tidyverse.org/reference/case_when.html
 ipip.comp <- ipip.comp %>% 
-  ...
+  mutate(BMI_cat = case_when(
+    BMI < 18.5 ~ 'underweight',
+    BMI >= 18.5 & BMI < 25 ~ 'healthy',
+    BMI >= 25 & BMI < 30 ~ 'overweight',
+    BMI >= 30 ~ 'obese'))
+
 # turn BMI_cat into a factor and order it with levels
-ipip.comp$BMI_cat <- ...
+ipip.comp$BMI_cat <- factor(ipip.comp$BMI_cat , levels = c('underweight', 'healthy', 'overweight', 'obese'))
+
+levels(ipip.comp$BMI_cat)
 
 # summarise trait values by BMI categories  
 bmi.avg <- ipip.comp %>% 
-  ...  
+  group_by(big5trait, BMI_cat) %>% 
+  summarize(avg = mean(mean_trait_score), n=length(unique(ipip.comp$RID)), sem = (sd(mean_trait_score)/sqrt(n)))
 
 # create BMI plot and compare to the answer figure:
-ggplot(bmi.avg,aes(x=trait,y=avg,colour=BMI_cat))+
+ggplot(bmi.avg,aes(x=big5trait,y=avg,colour=BMI_cat))+
   geom_pointrange(aes(ymin=avg-sem,ymax=avg+sem),
                   position=dodge)+
   labs(x='big 5 trait',y='mean trait value',title='Big 5 and BMI')
@@ -129,10 +138,11 @@ ggsave('figures/BMI.pdf',units='in',width=7,height=5)
 # between age and the big 5
 # NOTE: check out the cor() function by running ?cor in the console
 age.avg <- ipip.comp %>% 
-  ...
+  group_by(big5trait) %>% 
+  mutate(corrcoef = cor(mean_trait_score, age))
 
 # create age plot and compare to the answer figure
-ggplot(age.avg,aes(x=trait,y=corrcoef))+
+ggplot(age.avg,aes(x=big5trait,y=corrcoef))+
   geom_hline(yintercept=0)+
   geom_point(size=3)+
   labs(x='big 5 trait',y='correlation between trait and age',title='Big 5 and age')
