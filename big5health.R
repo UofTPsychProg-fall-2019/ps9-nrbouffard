@@ -8,7 +8,7 @@ ipip <- read_csv('ipip50_sample.csv')
 # measures traits of Agreeableness, Conscientiousness, Extroversion, 
 # Neuroticism, and Openness, along with measures of age, BMI, and exercise 
 # habits for 1000 participants. 
-# 
+#  
 # In the dataset, each trait has a set of associated survey items (e.g., 
 # Agreeableness has A_1, A_2, A_3, ... A_10). The total number of  items 
 # vary for the different traits (e.g., Agreeableness has 10, but Openness only 
